@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repositório de Coletas - Geolocalização</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 12px;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        .btn-danger {
+            background: #ff4757;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ee5a6f;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-card h3 {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-right: 6px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-view {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-body p {
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .modal-body strong {
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+            border-left: 4px solid #388e3c;
+        }
+
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+
+        #mapContainer {
+            display: none;
+            margin-top: 40px;
+        }
+
+        #map {
+            width: 100%;
+            height: 500px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .map-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            #map {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Repositório de Coletas</h1>
+            <p>Visualize e gerencie todas as coletas de geolocalização realizadas</p>
+            <p style="margin-top: 12px; font-size: 12px;">
+                <a href="formulario_geolizacao.html" style="color: white; text-decoration: underline;">📍 Voltar ao Formulário</a>
+            </p>
+        </div>
+
+        <div class="content">
+            <div id="statusDiv" class="status" style="display: none;"></div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Total de Coletas</h3>
+                    <div class="value" id="statTotal">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Últimas 7 dias</h3>
+                    <div class="value" id="statWeek">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Usuários Únicos</h3>
+                    <div class="value" id="statUsers">0</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="searchNome">Pesquisar por Nome</label>
+                    <input type="text" id="searchNome" placeholder="Digite um nome...">
+                </div>
+                <div class="control-group">
+                    <label for="searchEmail">Pesquisar por Email</label>
+                    <input type="text" id="searchEmail" placeholder="Digite um email...">
+                </div>
+                <div class="control-group">
+                    <label for="searchData">Data (YYYY-MM-DD)</label>
+                    <input type="date" id="searchData">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" onclick="filtrarColetas()">🔍 Filtrar</button>
+                <button class="btn-secondary" onclick="limparFiltros()">↻ Limpar</button>
+                <button class="btn-secondary" onclick="exportarCSV()">📥 CSV</button>
+                <button class="btn-secondary" onclick="exportarJSON()">📥 JSON</button>
+                <button class="btn-danger" onclick="limparTodos()">🗑️ Limpar Todos</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                            <th>Precisão</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
+                                Nenhuma coleta realizada ainda
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="mapContainer">
+                <div class="map-title">🗺️ Visualização no Mapa</div>
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para visualizar detalhes -->
+    <div id="modalDetalhes" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Detalhes da Coleta</span>
+                <button class="close-btn" onclick="fecharModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="fecharModal()">Fechar</button>
+                <button class="btn-primary" onclick="abrirNoMapa()">🗺️ Google Maps</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let coletas = [];
+        let coletaSelecionada = null;
+        let map = null;
+        let markers = [];
+        function mostrarMapa(coletasParaMapa = null) {
+            const coletasExibir = coletasParaMapa || coletas;
+
+            if (coletasExibir.length === 0) {
+                document.getElementById('mapContainer').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('mapContainer').style.display = 'block';
+            
+            setTimeout(() => {
+                if (map) {
+                    map.invalidateSize();
+                }
+                
+                // Limpar marcadores antigos
+                markers.forEach(marker => {
+                    if (map) map.removeLayer(marker);
+                });
+                markers = [];
+
+                // Adicionar novos marcadores
+                coletasExibir.forEach((col) => {
+                    const marker = L.marker([col.latitude, col.longitude], {
+                        title: col.nome
+                    }).addTo(map);
+
+                    marker.bindPopup(`
+                        <b>${col.nome}</b><br>
+                        ${col.email}<br>
+                        Lat: ${parseFloat(col.latitude).toFixed(4)}<br>
+                        Lng: ${parseFloat(col.longitude).toFixed(4)}<br>
+                        <small>${new Date(col.data_hora).toLocaleString('pt-BR')}</small>
+                    `);
+
+                    markers.push(marker);
+                });
+
+                // Ajustar zoom se houver marcadores
+                if (coletasExibir.length > 0) {
+                    const group = new L.featureGroup(markers);
+                    if (map && group.getBounds().isValid()) {
+                        map.fitBounds(group.getBounds().pad(0.1));
+                    }
+                }
+            }, 100);
+        }
+        function carregarColetas() {
+            const dados = localStorage.getItem('coletas_geo');
+            coletas = dados ? JSON.parse(dados) : [];
+            atualizarTabela();
+            atualizarEstatisticas();
+            mostrarMapa();
+        }
+
+        // Atualizar tabela
+        function atualizarTabela(coletasFiltradas = null) {
+            const tabela = document.getElementById('tabela');
+            const lista = coletasFiltradas || coletas;
+
+            if (lista.length === 0) {
+                tabela.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #999;">
+                            Nenhuma coleta encontrada
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tabela.innerHTML = lista.map((col, index) => `
+                <tr>
+                    <td>${new Date(col.data_hora).toLocaleString('pt-BR')}</td>
+                    <td>${col.nome}</td>
+                    <td>${col.email}</td>
+                    <td>${parseFloat(col.latitude).toFixed(4)}</td>
+                    <td>${parseFloat(col.longitude).toFixed(4)}</td>
+                    <td>${col.accuracy}m</td>
+                    <td>
+                        <button class="action-btn btn-view" onclick="verDetalhes(${coletas.indexOf(col)})">👁️ Ver</button>
+                        <button class="action-btn btn-delete" onclick="deletarColeta(${coletas.indexOf(col)})">❌ Del</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Atualizar mapa com as coletas filtradas
+            mostrarMapa(lista);
+        }
+
+        // Ver detalhes
+        function verDetalhes(index) {
+            coletaSelecionada = coletas[index];
+            const modal = document.getElementById('modalDetalhes');
+            const modalBody = document.getElementById('modalBody');
+
+            modalBody.innerHTML = `
+                <p><strong>Nome:</strong> ${coletaSelecionada.nome}</p>
+                <p><strong>Email:</strong> ${coletaSelecionada.email}</p>
+                <p><strong>Data/Hora:</strong> ${new Date(coletaSelecionada.data_hora).toLocaleString('pt-BR')}</p>
+                <p><strong>Latitude:</strong> ${coletaSelecionada.latitude}</p>
+                <p><strong>Longitude:</strong> ${coletaSelecionada.longitude}</p>
+                <p><strong>Altitude:</strong> ${coletaSelecionada.altitude || 'N/A'}</p>
+                <p><strong>Precisão:</strong> ${coletaSelecionada.accuracy} metros</p>
+                <p><strong>Observações:</strong> ${coletaSelecionada.observacao || 'Nenhuma'}</p>
+                <p><strong>Coordenadas:</strong> ${coletaSelecionada.latitude}, ${coletaSelecionada.longitude}</p>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        // Fechar modal
+        function fecharModal() {
+            document.getElementById('modalDetalhes').classList.remove('active');
+        }
+
+        // Abrir no Google Maps
+        function abrirNoMapa() {
+            if (coletaSelecionada) {
+                window.open(`https://www.google.com/maps?q=${coletaSelecionada.latitude},${coletaSelecionada.longitude}`, '_blank');
+            }
+        }
+
+        // Deletar coleta
+        function deletarColeta(index) {
+            if (confirm('Tem certeza que deseja deletar esta coleta?')) {
+                coletas.splice(index, 1);
+                salvarColetas();
+                mostrarStatus('✓ Coleta deletada com sucesso', 'success');
+            }
+        }
+
+        // Filtrar coletas
+        function filtrarColetas() {
+            const nome = document.getElementById('searchNome').value.toLowerCase();
+            const email = document.getElementById('searchEmail').value.toLowerCase();
+            const data = document.getElementById('searchData').value;
+
+            const filtradas = coletas.filter(col => {
+                const nomeMatch = col.nome.toLowerCase().includes(nome);
+                const emailMatch = col.email.toLowerCase().includes(email);
+                const dataMatch = !data || new Date(col.data_hora).toISOString().split('T')[0] === data;
+                return nomeMatch && emailMatch && dataMatch;
+            });
+
+            atualizarTabela(filtradas);
+        }
+
+        // Limpar filtros
+        function limparFiltros() {
+            document.getElementById('searchNome').value = '';
+            document.getElementById('searchEmail').value = '';
+            document.getElementById('searchData').value = '';
+            atualizarTabela();
+        }
+
+        // Exportar CSV
+        function exportarCSV() {
+            if (coletas.length === 0) {
+                mostrarStatus('⚠️ Nenhuma coleta para exportar', 'info');
+                return;
+            }
+
+            let csv = 'Data/Hora,Nome,Email,Latitude,Longitude,Altitude,Precisão,Observações\n';
+            coletas.forEach(col => {
+                csv += `"${new Date(col.data_hora).toLocaleString('pt-BR')}","${col.nome}","${col.email}",${col.latitude},${col.longitude},"${col.altitude || 'N/A'}",${col.accuracy},"${(col.observacao || '').replace(/"/g, '""')}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `coletas_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        // Exportar JSON
+        function exportarJSON() {
+            if (coletas.length === 0) {
+                mostrarStatus('⚠️ Nenhuma coleta para exportar', 'info');
+                return;
+            }
+
+            const json = JSON.stringify(coletas, null, 2);
+            const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `coletas_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        // Limpar tudo
+        function limparTodos() {
+            if (confirm('ATENÇÃO: Isso deletará TODAS as coletas. Tem certeza?')) {
+                coletas = [];
+                salvarColetas();
+                mostrarStatus('✓ Todas as coletas foram deletadas', 'success');
+            }
+        }
+
+        // Salvar coletas
+        function salvarColetas() {
+            localStorage.setItem('coletas_geo', JSON.stringify(coletas));
+            atualizarTabela();
+            atualizarEstatisticas();
+        }
+
+        // Adicionar coleta (chamado pelo formulário)
+        function adicionarColeta(coleta) {
+            coletas.push(coleta);
+            salvarColetas();
+        }
+
+        // Atualizar estatísticas
+        function atualizarEstatisticas() {
+            document.getElementById('statTotal').textContent = coletas.length;
+
+            const semanaPassada = new Date();
+            semanaPassada.setDate(semanaPassada.getDate() - 7);
+            const ultimaSemana = coletas.filter(col => new Date(col.data_hora) >= semanaPassada).length;
+            document.getElementById('statWeek').textContent = ultimaSemana;
+
+            const usuarios = new Set(coletas.map(col => col.email)).size;
+            document.getElementById('statUsers').textContent = usuarios;
+        }
+
+        // Mostrar status
+        function mostrarStatus(mensagem, tipo) {
+            const statusDiv = document.getElementById('statusDiv');
+            statusDiv.textContent = mensagem;
+            statusDiv.className = `status ${tipo}`;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 4000);
+        }
+
+        // Inicializar
+        carregarColetas();
+
+        // Inicializar mapa
+        setTimeout(() => {
+            if (!map) {
+                map = L.map('map').setView([-15, -51], 4);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+
+                mostrarMapa();
+            }
+        }, 200);
+    </script>
+</body>
+</html>

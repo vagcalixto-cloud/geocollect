@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário com Geolocalização</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: #f9f9ff;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+            display: block;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+            border-left: 4px solid #388e3c;
+            display: block;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+            display: block;
+        }
+
+        .coords-display {
+            background: #f5f5f5;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .coords-display p {
+            margin: 6px 0;
+            color: #555;
+        }
+
+        .coords-display strong {
+            color: #333;
+        }
+
+        .maps-link {
+            display: inline-block;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .maps-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        #coordsContainer {
+            display: none;
+        }
+
+        #captureContainer {
+            display: none;
+        }
+
+        #alternativeMethodsContainer {
+            display: none;
+        }
+
+        #manualInputContainer {
+            display: none;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: #1976d2;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📍 Coleta de Geolocalização</h1>
+            <p>Preencha o formulário e sua localização será capturada automaticamente</p>
+            <p style="margin-top: 12px; font-size: 12px;">
+                <a href="repositorio_coletas.html" style="color: white; text-decoration: underline;">📊 Ver Repositório de Coletas</a>
+            </p>
+        </div>
+
+        <div class="content">
+            <div id="status" class="status"></div>
+
+            <form id="geoForm">
+                <div class="form-group">
+                    <label for="nome">Nome Completo *</label>
+                    <input type="text" id="nome" name="nome" required placeholder="Digite seu nome">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="text" id="email" name="email" required placeholder="seu.email@exemplo.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Geolocalização *</label>
+                    <div class="info-box">
+                        💡 <strong>Automático:</strong> A localização está sendo capturada automaticamente. Clique em "Permitir" na janela que aparecer.
+                    </div>
+                    <div class="button-group">
+                        <button type="button" id="btnPermissao" class="btn-primary" style="display: none;">
+                            🔐 Solicitar Permissão Novamente
+                        </button>
+                        <button type="button" id="btnStatus" class="btn-secondary" disabled style="opacity: 1;">
+                            ⏳ Capturando localização...
+                        </button>
+                    </div>
+
+                    <div id="permissionBlockedContainer" style="display: none; margin-top: 12px;">
+                        <div style="background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
+                            <p style="font-size: 12px; color: #856404; margin: 0; line-height: 1.4;">
+                                <strong>⚠️ Permissão Bloqueada:</strong> A geolocalização foi negada pelo navegador/dispositivo.
+                                <br><br>
+                                <strong>Para resetar:</strong>
+                                <br>📱 <strong>Android:</strong> Configurações → Apps → [Seu Navegador] → Permissões → Localização → Limpar
+                                <br>🍎 <strong>iOS:</strong> Configurações → [Seu Navegador] → Localização → Nunca → mude para "Enquanto usa o app"
+                            </p>
+                        </div>
+                        <button type="button" id="btnResetarCache" class="btn-secondary" style="width: 100%; margin-bottom: 12px;">
+                            🔄 Tentar Novamente (após resetar permissões)
+                        </button>
+                    </div>
+                </div>
+
+                <div id="captureContainer" style="display: none;">
+                    <p style="font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.5;">
+                        ✅ <strong>Localização capturada!</strong> Você pode refinar os dados ou enviar o formulário.
+                    </p>
+                    <div class="button-group">
+                        <button type="button" id="btnCapturarNovamente" class="btn-primary">
+                            📍 Capturar Novamente
+                        </button>
+                        <button type="button" id="btnLimpar" class="btn-secondary">
+                            Limpar Dados
+                        </button>
+                    </div>
+                </div>
+
+                <div id="alternativeMethodsContainer" style="display: none; margin-top: 16px;">
+                    <p style="font-size: 12px; font-weight: 600; color: #333; margin-bottom: 8px;">🔄 Métodos Alternativos:</p>
+                    <div class="button-group">
+                        <button type="button" id="btnGeoIP" class="btn-secondary">
+                            🌐 Localização por IP
+                        </button>
+                        <button type="button" id="btnManualCoords" class="btn-secondary">
+                            ✏️ Inserir Manualmente
+                        </button>
+                    </div>
+                </div>
+
+                <div id="manualInputContainer" style="display: none; margin-top: 16px; padding: 16px; background: #f5f5f5; border-radius: 8px;">
+                    <p style="font-size: 12px; font-weight: 600; color: #333; margin-bottom: 12px;">Inserir Coordenadas Manualmente:</p>
+                    <div style="margin-bottom: 12px;">
+                        <label for="latManual" style="font-size: 12px;">Latitude:</label>
+                        <input type="number" id="latManual" placeholder="-23.5505" step="0.0001" style="margin-top: 4px;">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label for="lngManual" style="font-size: 12px;">Longitude:</label>
+                        <input type="number" id="lngManual" placeholder="-46.6333" step="0.0001" style="margin-top: 4px;">
+                    </div>
+                    <div class="button-group">
+                        <button type="button" id="btnConfirmarManual" class="btn-primary">
+                            ✓ Confirmar Coordenadas
+                        </button>
+                        <button type="button" id="btnCancelarManual" class="btn-secondary">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+
+                <div id="coordsContainer" style="display: none;">
+                    <div class="coords-display">
+                        <p><strong>Latitude:</strong> <span id="latitude">-</span></p>
+                        <p><strong>Longitude:</strong> <span id="longitude">-</span></p>
+                        <p><strong>Altitude:</strong> <span id="altitude">-</span></p>
+                        <p><strong>Precisão:</strong> <span id="accuracy">-</span> metros</p>
+                    </div>
+
+                    <a id="googleMapsLink" href="#" target="_blank" class="maps-link">
+                        🗺️ Abrir no Google Maps
+                    </a>
+
+                    <input type="hidden" id="latInput" name="latitude">
+                    <input type="hidden" id="lngInput" name="longitude">
+                    <input type="hidden" id="altInput" name="altitude">
+                </div>
+
+                <div class="form-group">
+                    <label for="observacao">Observações</label>
+                    <textarea id="observacao" name="observacao" placeholder="Adicione qualquer observação sobre a localização ou o ponto de coleta..."></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-primary">
+                        ✓ Enviar Formulário
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="irParaRepositorio()">
+                        📊 Ver Repositório
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let latLng = null;
+        let permissaoGranted = false;
+
+        const btnPermissao = document.getElementById('btnPermissao');
+        const btnStatus = document.getElementById('btnStatus');
+        const btnCapturarNovamente = document.getElementById('btnCapturarNovamente');
+        const btnLimpar = document.getElementById('btnLimpar');
+        const btnResetarCache = document.getElementById('btnResetarCache');
+        const btnGeoIP = document.getElementById('btnGeoIP');
+        const btnManualCoords = document.getElementById('btnManualCoords');
+        const btnConfirmarManual = document.getElementById('btnConfirmarManual');
+        const btnCancelarManual = document.getElementById('btnCancelarManual');
+        const captureContainer = document.getElementById('captureContainer');
+        const coordsContainer = document.getElementById('coordsContainer');
+        const permissionBlockedContainer = document.getElementById('permissionBlockedContainer');
+        const alternativeMethodsContainer = document.getElementById('alternativeMethodsContainer');
+        const manualInputContainer = document.getElementById('manualInputContainer');
+        const statusDiv = document.getElementById('status');
+        const geoForm = document.getElementById('geoForm');
+
+        // ============ VERIFICAR PERMISSÃO ============
+        async function verificarPermissaoGeo() {
+            try {
+                const permission = await navigator.permissions.query({ name: 'geolocation' });
+                return permission.state;
+            } catch (err) {
+                return null;
+            }
+        }
+
+        // ============ ATUALIZAR STATUS DA PERMISSÃO ============
+        async function atualizarStatusPermissao() {
+            const permissao = await verificarPermissaoGeo();
+            
+            if (permissao === 'granted') {
+                btnStatus.textContent = '✅ Permissão Autorizada';
+                btnStatus.style.opacity = '1';
+                btnStatus.style.background = '#e8f5e9';
+                btnStatus.style.color = '#388e3c';
+                captureContainer.style.display = 'block';
+                permissionBlockedContainer.style.display = 'none';
+                alternativeMethodsContainer.style.display = 'none';
+                permissaoGranted = true;
+                btnPermissao.disabled = true;
+                mostrarStatus('✅ Permissão de localização autorizada!', 'success');
+            } else if (permissao === 'denied') {
+                btnStatus.textContent = '❌ Permissão Negada';
+                btnStatus.style.opacity = '1';
+                btnStatus.style.background = '#ffebee';
+                btnStatus.style.color = '#c62828';
+                captureContainer.style.display = 'none';
+                permissionBlockedContainer.style.display = 'block';
+                alternativeMethodsContainer.style.display = 'block';
+                mostrarStatus('❌ Permissão de geolocalização foi bloqueada. Use os métodos alternativos abaixo.', 'error');
+            } else {
+                btnStatus.textContent = '⏳ Aguardando...';
+                btnStatus.style.opacity = '0.6';
+                btnStatus.style.background = '';
+                btnStatus.style.color = '';
+                captureContainer.style.display = 'none';
+                permissionBlockedContainer.style.display = 'none';
+                alternativeMethodsContainer.style.display = 'none';
+            }
+        }
+
+        // ============ BOTÃO: RESETAR CACHE ============
+        if (btnResetarCache) {
+            btnResetarCache.addEventListener('click', function() {
+                mostrarStatus('🔄 Tente conceder permissão novamente...', 'loading');
+                btnPermissao.disabled = false;
+                btnPermissao.click();
+            });
+        }
+
+        // ============ BOTÃO: GEOLOCALIZAÇÃO POR IP ============
+        if (btnGeoIP) {
+            btnGeoIP.addEventListener('click', function() {
+                btnGeoIP.disabled = true;
+                mostrarStatus('🌐 Obtendo localização por IP...', 'loading');
+
+                fetch('https://ipapi.co/json/')
+                    .then(response => response.json())
+                    .then(data => {
+                        latLng = {
+                            lat: data.latitude,
+                            lng: data.longitude
+                        };
+
+                        document.getElementById('latitude').textContent = data.latitude.toFixed(6);
+                        document.getElementById('longitude').textContent = data.longitude.toFixed(6);
+                        document.getElementById('altitude').textContent = 'N/A (IP)';
+                        document.getElementById('accuracy').textContent = '~5000m (aproximada)';
+
+                        document.getElementById('latInput').value = data.latitude;
+                        document.getElementById('lngInput').value = data.longitude;
+                        document.getElementById('altInput').value = '';
+
+                        coordsContainer.style.display = 'block';
+                        atualizarGoogleMapsLink();
+
+                        btnStatus.textContent = '✅ Localização Obtida (IP)';
+                        btnStatus.style.opacity = '1';
+                        btnStatus.style.background = '#e8f5e9';
+                        btnStatus.style.color = '#388e3c';
+                        captureContainer.style.display = 'block';
+                        permissionBlockedContainer.style.display = 'none';
+                        alternativeMethodsContainer.style.display = 'none';
+                        permissaoGranted = true;
+
+                        mostrarStatus('✓ Localização obtida por IP (aproximada para sua região)', 'success');
+                        btnGeoIP.disabled = false;
+                        manualInputContainer.style.display = 'none';
+                    })
+                    .catch(error => {
+                        mostrarStatus('❌ Erro ao obter localização por IP. Tente o método manual.', 'error');
+                        btnGeoIP.disabled = false;
+                    });
+            });
+        }
+
+        // ============ BOTÃO: INSERIR COORDENADAS MANUALMENTE ============
+        if (btnManualCoords) {
+            btnManualCoords.addEventListener('click', function() {
+                manualInputContainer.style.display = 'block';
+                document.getElementById('latManual').focus();
+            });
+        }
+
+        // ============ CONFIRMAR COORDENADAS MANUAIS ============
+        if (btnConfirmarManual) {
+            btnConfirmarManual.addEventListener('click', function() {
+                const lat = parseFloat(document.getElementById('latManual').value);
+                const lng = parseFloat(document.getElementById('lngManual').value);
+
+                if (isNaN(lat) || isNaN(lng)) {
+                    mostrarStatus('❌ Digite valores válidos para latitude e longitude', 'error');
+                    return;
+                }
+
+                if (lat < -90 || lat > 90) {
+                    mostrarStatus('❌ Latitude deve estar entre -90 e 90', 'error');
+                    return;
+                }
+
+                if (lng < -180 || lng > 180) {
+                    mostrarStatus('❌ Longitude deve estar entre -180 e 180', 'error');
+                    return;
+                }
+
+                latLng = {
+                    lat: lat,
+                    lng: lng
+                };
+
+                document.getElementById('latitude').textContent = lat.toFixed(6);
+                document.getElementById('longitude').textContent = lng.toFixed(6);
+                document.getElementById('altitude').textContent = 'N/A (Manual)';
+                document.getElementById('accuracy').textContent = 'Manual';
+
+                document.getElementById('latInput').value = lat;
+                document.getElementById('lngInput').value = lng;
+                document.getElementById('altInput').value = '';
+
+                coordsContainer.style.display = 'block';
+                atualizarGoogleMapsLink();
+
+                mostrarStatus('✓ Coordenadas inseridas manualmente', 'success');
+                manualInputContainer.style.display = 'none';
+            });
+        }
+
+        // ============ CANCELAR COORDENADAS MANUAIS ============
+        if (btnCancelarManual) {
+            btnCancelarManual.addEventListener('click', function() {
+                manualInputContainer.style.display = 'none';
+                document.getElementById('latManual').value = '';
+                document.getElementById('lngManual').value = '';
+            });
+        }
+
+        // ============ INICIALIZAR MAPA (Google Maps Link) ============
+        function atualizarGoogleMapsLink() {
+            const googleMapsLink = document.getElementById('googleMapsLink');
+            if (googleMapsLink && latLng) {
+                googleMapsLink.href = `https://www.google.com/maps?q=${latLng.lat},${latLng.lng}`;
+                googleMapsLink.textContent = `🗺️ Abrir no Google Maps (${latLng.lat.toFixed(4)}, ${latLng.lng.toFixed(4)})`;
+            }
+        }
+
+        // ============ BOTÃO: CAPTURAR NOVAMENTE ============
+        if (btnCapturarNovamente) {
+            btnCapturarNovamente.addEventListener('click', function() {
+                btnCapturarNovamente.disabled = true;
+                mostrarStatus('📍 Capturando sua localização novamente...', 'loading');
+
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const coords = position.coords;
+                        latLng = {
+                            lat: coords.latitude,
+                            lng: coords.longitude
+                        };
+
+                        document.getElementById('latitude').textContent = coords.latitude.toFixed(6);
+                        document.getElementById('longitude').textContent = coords.longitude.toFixed(6);
+                        document.getElementById('altitude').textContent = coords.altitude 
+                            ? coords.altitude.toFixed(2) + ' m' 
+                            : 'N/A';
+                        document.getElementById('accuracy').textContent = coords.accuracy.toFixed(2);
+
+                        document.getElementById('latInput').value = coords.latitude;
+                        document.getElementById('lngInput').value = coords.longitude;
+                        document.getElementById('altInput').value = coords.altitude || '';
+
+                        atualizarGoogleMapsLink();
+
+                        mostrarStatus('✓ Localização capturada novamente com sucesso!', 'success');
+                        btnCapturarNovamente.disabled = false;
+                    },
+                    function(error) {
+                        let mensagem = 'Erro: ';
+                        
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                mensagem = '❌ Permissão negada. Resete as permissões do navegador.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                mensagem += 'Sua posição não pode ser determinada. Tente em local aberto.';
+                                break;
+                            case error.TIMEOUT:
+                                mensagem += 'Tempo limite excedido. Tente novamente.';
+                                break;
+                            default:
+                                mensagem += 'Erro desconhecido.';
+                        }
+                        
+                        mostrarStatus(mensagem, 'error');
+                        btnCapturarNovamente.disabled = false;
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 45000,
+                        maximumAge: 0
+                    }
+                );
+            });
+        }
+
+        // ============ BOTÃO: LIMPAR DADOS ============
+        if (btnLimpar) {
+            btnLimpar.addEventListener('click', function() {
+                document.getElementById('latitude').textContent = '-';
+                document.getElementById('longitude').textContent = '-';
+                document.getElementById('altitude').textContent = '-';
+                document.getElementById('accuracy').textContent = '-';
+                document.getElementById('latInput').value = '';
+                document.getElementById('lngInput').value = '';
+                document.getElementById('altInput').value = '';
+                coordsContainer.style.display = 'none';
+                captureContainer.style.display = 'none';
+                latLng = null;
+                
+                mostrarStatus('✓ Dados limpos', 'success');
+            });
+        }
+
+        // ============ ENVIAR FORMULÁRIO - SALVAR NO REPOSITÓRIO ============
+        geoForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!latLng) {
+                mostrarStatus('⚠️ Capture a localização antes de enviar', 'error');
+                return;
+            }
+
+            const nome = document.getElementById('nome').value;
+            const email = document.getElementById('email').value;
+            const latitude = document.getElementById('latInput').value;
+            const longitude = document.getElementById('lngInput').value;
+            const altitude = document.getElementById('altInput').value;
+            const observacao = document.getElementById('observacao').value;
+
+            if (!nome || !email) {
+                mostrarStatus('⚠️ Preencha nome e email', 'error');
+                return;
+            }
+
+            const coleta = {
+                id: Date.now(),
+                nome: nome,
+                email: email,
+                latitude: latitude,
+                longitude: longitude,
+                altitude: altitude || 'N/A',
+                accuracy: document.getElementById('accuracy').textContent.replace(' metros', ''),
+                observacao: observacao,
+                data_hora: new Date().toISOString()
+            };
+
+            let coletas = JSON.parse(localStorage.getItem('coletas_geo') || '[]');
+            coletas.push(coleta);
+            localStorage.setItem('coletas_geo', JSON.stringify(coletas));
+
+            mostrarStatus('✅ Coleta armazenada com sucesso no repositório!', 'success');
+            
+            geoForm.reset();
+            
+            document.getElementById('latitude').textContent = '-';
+            document.getElementById('longitude').textContent = '-';
+            document.getElementById('altitude').textContent = '-';
+            document.getElementById('accuracy').textContent = '-';
+            document.getElementById('latInput').value = '';
+            document.getElementById('lngInput').value = '';
+            document.getElementById('altInput').value = '';
+            coordsContainer.style.display = 'none';
+            captureContainer.style.display = 'none';
+            latLng = null;
+            
+            setTimeout(() => {
+                if (confirm('Coleta armazenada! Deseja ver todas as coletas no repositório?')) {
+                    window.location.href = 'repositorio_coletas.html';
+                } else {
+                    iniciarCapturaAutomatica();
+                }
+            }, 1500);
+        });
+
+        // ============ FUNÇÃO AUXILIAR ============
+        function mostrarStatus(mensagem, tipo) {
+            statusDiv.textContent = mensagem;
+            statusDiv.className = 'status ' + tipo;
+            
+            if (tipo === 'success') {
+                setTimeout(() => {
+                    statusDiv.className = 'status';
+                }, 4000);
+            }
+        }
+
+        // ============ IR PARA REPOSITÓRIO ============
+        function irParaRepositorio() {
+            window.location.href = 'repositorio_coletas.html';
+        }
+
+        // ============ INICIALIZAR - CAPTURAR AUTOMATICAMENTE ============
+        function iniciarCapturaAutomatica() {
+            mostrarStatus('📍 Capturando sua localização...', 'loading');
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const coords = position.coords;
+                    latLng = {
+                        lat: coords.latitude,
+                        lng: coords.longitude
+                    };
+
+                    document.getElementById('latitude').textContent = coords.latitude.toFixed(6);
+                    document.getElementById('longitude').textContent = coords.longitude.toFixed(6);
+                    document.getElementById('altitude').textContent = coords.altitude 
+                        ? coords.altitude.toFixed(2) + ' m' 
+                        : 'N/A';
+                    document.getElementById('accuracy').textContent = coords.accuracy.toFixed(2);
+
+                    document.getElementById('latInput').value = coords.latitude;
+                    document.getElementById('lngInput').value = coords.longitude;
+                    document.getElementById('altInput').value = coords.altitude || '';
+
+                    coordsContainer.style.display = 'block';
+                    atualizarGoogleMapsLink();
+
+                    btnStatus.textContent = '✅ Localização Capturada (GPS)';
+                    btnStatus.style.opacity = '1';
+                    btnStatus.style.background = '#e8f5e9';
+                    btnStatus.style.color = '#388e3c';
+                    captureContainer.style.display = 'block';
+                    permissionBlockedContainer.style.display = 'none';
+                    alternativeMethodsContainer.style.display = 'block';
+                    permissaoGranted = true;
+
+                    mostrarStatus('✅ Localização capturada automaticamente com sucesso!', 'success');
+                },
+                function(error) {
+                    let mensagem = '';
+                    let tentarIP = false;
+
+                    if (error.code === error.PERMISSION_DENIED) {
+                        mensagem = '❌ Permissão foi bloqueada. Use os métodos alternativos.';
+                        btnStatus.textContent = '❌ Permissão Negada';
+                        btnStatus.style.opacity = '1';
+                        btnStatus.style.background = '#ffebee';
+                        btnStatus.style.color = '#c62828';
+                        permissionBlockedContainer.style.display = 'block';
+                        alternativeMethodsContainer.style.display = 'block';
+                    } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        mensagem = '⚠️ Posição indisponível. Tentando usar IP...';
+                        tentarIP = true;
+                    } else if (error.code === error.TIMEOUT) {
+                        mensagem = '⚠️ Tempo limite do GPS. Tentando usar IP...';
+                        tentarIP = true;
+                    } else {
+                        mensagem = '⚠️ Erro ao capturar. Tentando usar IP...';
+                        tentarIP = true;
+                    }
+
+                    mostrarStatus(mensagem, 'error');
+
+                    if (tentarIP) {
+                        setTimeout(() => {
+                            tentarGeoIPAutomatico();
+                        }, 1500);
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 45000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        // ============ FALLBACK: TENTAR GEO-IP AUTOMATICAMENTE ============
+        function tentarGeoIPAutomatico() {
+            mostrarStatus('🌐 Obtendo localização por IP...', 'loading');
+
+            fetch('https://ipapi.co/json/')
+                .then(response => response.json())
+                .then(data => {
+                    latLng = {
+                        lat: data.latitude,
+                        lng: data.longitude
+                    };
+
+                    document.getElementById('latitude').textContent = data.latitude.toFixed(6);
+                    document.getElementById('longitude').textContent = data.longitude.toFixed(6);
+                    document.getElementById('altitude').textContent = 'N/A (IP)';
+                    document.getElementById('accuracy').textContent = '~5000m (aproximada)';
+
+                    document.getElementById('latInput').value = data.latitude;
+                    document.getElementById('lngInput').value = data.longitude;
+                    document.getElementById('altInput').value = '';
+
+                    coordsContainer.style.display = 'block';
+                    atualizarGoogleMapsLink();
+
+                    btnStatus.textContent = '✅ Localização Obtida (IP)';
+                    btnStatus.style.opacity = '1';
+                    btnStatus.style.background = '#e8f5e9';
+                    btnStatus.style.color = '#388e3c';
+                    captureContainer.style.display = 'block';
+                    permissionBlockedContainer.style.display = 'none';
+                    alternativeMethodsContainer.style.display = 'block';
+                    permissaoGranted = true;
+
+                    mostrarStatus('✓ Localização obtida por IP (aproximada para sua região)', 'success');
+                })
+                .catch(error => {
+                    mostrarStatus('❌ Erro ao obter localização por IP. Use o método manual.', 'error');
+                    permissionBlockedContainer.style.display = 'block';
+                    alternativeMethodsContainer.style.display = 'block';
+                });
+        }
+
+        // ============ INICIALIZAR AO CARREGAR ============
+        window.addEventListener('load', function() {
+            if (!navigator.geolocation) {
+                mostrarStatus('⚠️ Seu navegador não suporta Geolocalização', 'error');
+                btnStatus.textContent = '❌ Geolocalização não suportada';
+                btnStatus.style.background = '#ffebee';
+                btnStatus.style.color = '#c62828';
+                return;
+            }
+
+            iniciarCapturaAutomatica();
+        });
+    </script>
+</body>
+</html>
